@@ -35,4 +35,5 @@
 ## О скрипте
 
 Создатель: [Денис Житняков](https://t.me/deniszhitnyakov)
+
 Maintainer: [Yellow Web](https://yellowweb.top)
