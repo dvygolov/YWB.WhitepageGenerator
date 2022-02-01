@@ -4,58 +4,30 @@ ini_set( 'display_errors', 1 );
 
 /*
  *
- * НАСТРОЙКИ СКРИПТА
+ * SCRIPT SETTINGS
  *
  * */
-$langFrom = 'ru';                                       // ЯЗЫК ИСТОЧНИКА
-$langTo = 'ru';                                         // ЯЗЫК ПЕРЕВОДА. ЕСЛИ ПЕРЕВОД НЕ НУЖЕН, УКАЗАТЬ ЯЗЫК ИСТОЧНИКА
+$langFrom = 'ru';                                       // SOURCE LANGUAGE
+$langTo = 'hr';                                         // TRANSLATION LANGUAGE
 $site = 'https://www.myjane.ru/articles/rubric/?id=3';  // ССЫЛКА НА РУБРИКУ СТАТЕЙ MYJANE.RU
 $startPage = 1;                                         // НОМЕР СТРАНИЦЫ, С КОТОРОЙ НАЧИНАТЬ ПАРСИТЬ СТАТЬИ
 $depth = 20;                                            // СКОЛЬКО СТРАНИЦ РУБРИКИ ПРОСМАТРИВАТЬ?
-$articlesCount = 5;                                     // СКОЛЬКО СТАТЕЙ ДЕРГАТЬ ДЛЯ ВАЙТА?
+$articlesCount = 15;                                     // СКОЛЬКО СТАТЕЙ ДЕРГАТЬ ДЛЯ ВАЙТА?
 $withImages = 1;                                        // ЗАГРУЖАТЬ ЛИ РАНДОМНЫЕ КАРТИНКИ С PIXABAY?
-/*
- * ПРОКСИ
- * ФОРМАТ http://ip:port ИЛИ http://user:password@ip:port
- * ОСТАВИТЬ ПУСТЫМ, ЕСЛИ БЕЗ ПРОКСИ
- * */
-$proxy = '';
 
-/*
- *
- * ЗАГРУЗКА НЕОБХОДИМЫХ БИБЛИОТЕК
- *
- * */
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/zip.php';
+require_once __DIR__ . '/google.php';
 require_once 'htmldom.php';
 
-/*
- *
- * ИНИЦИАЛИЗАЦИЯ БИБЛИОТЕКИ ПЕРЕВОДА
- *
- * */
-
-use Stichoza\GoogleTranslate\GoogleTranslate;
-
 $tr = new GoogleTranslate();
-$tr->setSource( $langFrom );
-$tr->setTarget( $langTo );
-$tr->setOptions( [ 'proxy' => $proxy ] );
 
-/*
- *
- * СБОР ССЫЛОК НА СТАТЬИ C N ПЕРВЫХ СТРАНИЦ
- *
- * */
 $articles = [];
 
-echo "Получаю ссылки на статьи<br>";
-flush();
+echo "Getting article links...\n";
 
 for ( $page = $startPage; $page <= $startPage + $depth; $page++ ) {
-    echo "Просматриваю страницу #$page<br>";
-    flush();
+    echo "Parsing page #$page\n";
 
     $html = file_get_html( "$site&page=$page" );
 
@@ -68,13 +40,8 @@ for ( $page = $startPage; $page <= $startPage + $depth; $page++ ) {
     }
 }
 
-/*
- *
- * СОЗДАНИЕ ВАЙТА
- *
- * */
 
-// удаление старых вайтов из папки output
+// delete old white pages from the output folder
 $dir = __DIR__ . "/output/";
 $allowedFiles = [ '.', '..', 'w.php', 'contact.php', 'themes' ];
 $files = scandir( $dir );
@@ -85,11 +52,10 @@ foreach ( $files as $file ) {
 for ( $i = 1; $i <= $articlesCount; $i++ ) {
     /*
      *
-     * ОБЩИЙ ПАРСИНГ СТАТЬИ
+     * Article parsing
      *
      * */
-    echo "Обрабатываю статью #$i<br>";
-    flush();
+    echo "Processing article #$i\n";
 
     $a = array_rand( $articles );
     $article = $articles[ $a ];
@@ -97,36 +63,36 @@ for ( $i = 1; $i <= $articlesCount; $i++ ) {
     $translated = [];
 
     $html = file_get_html( $article );
-    $data[ 'title' ] = $tr->translate( $html->find( 'h1', 0 )->plaintext );
+    $data[ 'title' ] = $tr->translate( $html->find( 'h1', 0 )->plaintext,$langFrom,$langTo );
     $data[ 'text' ] = $html->find( 'div.usertext > div.usertext', 0 )->outertext;
 
     /*
      *
-     * ОБРАБОТКА ТЕКСТА СТАТЬИ
+     * PROCESSING ARTICLE TEXT
      *
      * */
     $html = str_get_html( $data[ 'text' ] );
 
-    // убрать все ссылки в статье
+    // remove all links
     foreach ( $html->find( 'a' ) as $a ) {
         $a->href = '#';
     }
 
-    // убрать содержимое рекламных баннеров
+    // remove banners
     foreach ( $html->find( 'div > div' ) as $div ) {
         $div->innertext = '';
     }
 
     $html = $html->save();
 
-    // поиск и запись краткого превью статьи
+    // search and writedown article preview
     preg_match( '/<b>.*<\/b>/', $html, $matches );
     if ( $matches ) {
         $data[ 'short' ] = str_replace( '<b>', '', str_replace( '</b>', '', $matches[ 0 ] ) ) . '...';
-        $data[ 'short' ] = $tr->translate( $data[ 'short' ] );
+        $data[ 'short' ] = $tr->translate( $data[ 'short' ],$langFrom,$langTo );
     }
 
-    // обработка мелочи в HTML-разметке
+    // HTML processing
     $html = preg_replace( '/<a[^>]+>/', '', $html );
     $html = preg_replace( '/<\/a>/', '', $html );
     $html = preg_replace( '/<br \/> <br \/>/', '<br />', $html );
@@ -139,10 +105,11 @@ for ( $i = 1; $i <= $articlesCount; $i++ ) {
     $html = preg_replace( '/<\/div>/', '', $html );
     $html = preg_replace( '/<h3><p>/', '<h3>', $html );
 
-    // перевод статьи
+    // article translation
     $parts = preg_split( '/(<[^>]*[^\/]>)/i', $html, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE );
     foreach ( $parts as $p ) {
-        if ( $langFrom != $langTo ) usleep( 500000 );
+        if ( $langFrom != $langTo ) 
+            usleep( 500000 );
         if ( empty( trim( $p ) ) ) continue;
         if ( strpos( $p, '<' ) !== false ) {
             $translated[] = $p;
@@ -150,12 +117,12 @@ for ( $i = 1; $i <= $articlesCount; $i++ ) {
         }
         $p = trim( $p );
         if ( mb_strlen( $p ) < 5000 ) {
-            $translated[] = $tr->translate( $p );
+            $translated[] = $tr->translate( $p,$langFrom,$langTo );
         }
     }
     $html = implode( '', $translated );
 
-    // записть готовой статьи в .html файл под ее порядковым номером
+    // saving article
     $posts[] = [ 'id' => $i, 'title' => $data[ 'title' ], 'filename' => "$i.html", 'short' => $data[ 'short' ] ?? '' ];
     file_put_contents( "$dir/$i.html", $html );
     file_put_contents( "$dir/posts.json", json_encode( $posts ) );
@@ -163,14 +130,13 @@ for ( $i = 1; $i <= $articlesCount; $i++ ) {
 
 /*
  *
- * ЗАГРУЗКА КАРТИНОК ДЛЯ СТАТЬЕЙ, ЕСЛИ НУЖНО
+ * Loading images
  *
  * */
 if ( $withImages ) {
     foreach ( $posts as $post ) {
 
-        echo "Загружаю изображение #{$post['id']}<br>";
-        flush();
+        echo "Loading image #{$post['id']}\n";
 
         $imageFile = "$dir/{$post['id']}.jpg";
         $image = getImage();
@@ -179,8 +145,7 @@ if ( $withImages ) {
     }
 }
 
-echo "Выполняю прочую мелочевку<br>";
-flush();
+echo "Final processing...\n";
 
 /*
  *
@@ -188,21 +153,21 @@ flush();
  *
  * */
 $lang = [
-    'readMore'     => $tr->translate( 'Читать полностью...' ),
-    'search'       => $tr->translate( 'Поиск' ),
-    'searchInput'  => $tr->translate( 'Хочу найти...' ),
-    'recentPosts'  => $tr->translate( 'Свежие статьи' ),
-    'published'    => $tr->translate( 'Опубликовано' ),
-    'prev'         => $tr->translate( 'Назад' ),
-    'next'         => $tr->translate( 'Вперед' ),
-    'blog'         => $tr->translate( 'Блог' ),
-    'contact'      => $tr->translate( 'Контакты' ),
-    'name'         => $tr->translate( 'Ваше имя' ),
-    'message'      => $tr->translate( 'Сообщение' ),
-    'send'         => $tr->translate( 'Отправить сообщение' ),
-    'searchSubmit' => $tr->translate( 'Найти!' ),
-    'images'       => $tr->translate( 'Галерея' ),
-    'success'      => $tr->translate( 'Спасибо за ваше сообщение!' ),
+    'readMore'     => $tr->translate( 'Читать полностью...',"ru",$langTo ),
+    'search'       => $tr->translate( 'Поиск',"ru",$langTo ),
+    'searchInput'  => $tr->translate( 'Хочу найти...',"ru",$langTo ),
+    'recentPosts'  => $tr->translate( 'Свежие статьи',"ru",$langTo ),
+    'published'    => $tr->translate( 'Опубликовано',"ru",$langTo ),
+    'prev'         => $tr->translate( 'Назад',"ru",$langTo ),
+    'next'         => $tr->translate( 'Вперед',"ru",$langTo ),
+    'blog'         => $tr->translate( 'Блог',"ru",$langTo ),
+    'contact'      => $tr->translate( 'Контакты',"ru",$langTo ),
+    'name'         => $tr->translate( 'Ваше имя',"ru",$langTo ),
+    'message'      => $tr->translate( 'Сообщение',"ru",$langTo ),
+    'send'         => $tr->translate( 'Отправить сообщение',"ru",$langTo ),
+    'searchSubmit' => $tr->translate( 'Найти!',"ru",$langTo ),
+    'images'       => $tr->translate( 'Галерея',"ru",$langTo ),
+    'success'      => $tr->translate( 'Спасибо за ваше сообщение!',"ru",$langTo ),
 ];
 file_put_contents( "$dir/lang.json", json_encode( $lang ) );
 
@@ -217,6 +182,7 @@ $config = [
     'theme' => $theme,
 ];
 file_put_contents( "$dir/config.json", json_encode( $config ) );
+echo "ALL DONE!";
 
 function getImage () {
     usleep( 1000000 );
@@ -229,3 +195,4 @@ function getImage () {
         return $result[ 'hits' ][ 0 ][ 'largeImageURL' ];
     }
 }
+?>

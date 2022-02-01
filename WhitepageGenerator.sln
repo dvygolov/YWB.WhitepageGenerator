@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{A0786B88-2ADB-4C21-ABE8-AA2D79766269}") = "WhitepageGenerator", "WhitepageGenerator.phpproj", "{FCDD40D1-C1BF-4E2A-BE8F-82A0973D5F97}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FCDD40D1-C1BF-4E2A-BE8F-82A0973D5F97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCDD40D1-C1BF-4E2A-BE8F-82A0973D5F97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCDD40D1-C1BF-4E2A-BE8F-82A0973D5F97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCDD40D1-C1BF-4E2A-BE8F-82A0973D5F97}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D35DFA83-2905-4C65-B5F8-5248193F3B81}
+	EndGlobalSection
+EndGlobal
