@@ -9,16 +9,15 @@ ini_set( 'display_errors', 1 );
  * */
 $langFrom = 'ru';                                       // SOURCE LANGUAGE
 $langTo = 'hr';                                         // TRANSLATION LANGUAGE
-$site = 'https://www.myjane.ru/articles/rubric/?id=3';  // ССЫЛКА НА РУБРИКУ СТАТЕЙ MYJANE.RU
-$startPage = 1;                                         // НОМЕР СТРАНИЦЫ, С КОТОРОЙ НАЧИНАТЬ ПАРСИТЬ СТАТЬИ
-$depth = 20;                                            // СКОЛЬКО СТРАНИЦ РУБРИКИ ПРОСМАТРИВАТЬ?
-$articlesCount = 15;                                     // СКОЛЬКО СТАТЕЙ ДЕРГАТЬ ДЛЯ ВАЙТА?
-$withImages = 1;                                        // ЗАГРУЖАТЬ ЛИ РАНДОМНЫЕ КАРТИНКИ С PIXABAY?
+$site = 'https://www.myjane.ru/articles/rubric/?id=7';  // LINK TO ARTICLES RUBRIC ON MYJANE.RU WEBSITE
+$startPage = 1;                                         // PAGE NUMBER FROM WICH THE PARSING WILL START
+$depth = 20;                                            // HOW MANY SITE'S PAGES SHOULD WE PROCESS?
+$articlesCount = 5;                                    // HOW MANY ARTICLES WILL BE IN OUR WHITE PAGE?
+$withImages = 1;                                        // SHOULD WE ADD RANDOM PICTURES FROM PIXABAY?
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/zip.php';
 require_once __DIR__ . '/google.php';
-require_once 'htmldom.php';
+require_once __DIR__ . '/htmldom.php';
 
 $tr = new GoogleTranslate();
 
@@ -43,7 +42,7 @@ for ( $page = $startPage; $page <= $startPage + $depth; $page++ ) {
 
 // delete old white pages from the output folder
 $dir = __DIR__ . "/output/";
-$allowedFiles = [ '.', '..', 'w.php', 'contact.php', 'themes' ];
+$allowedFiles = [ '.', '..', 'index.php', 'contact.php', 'themes' ];
 $files = scandir( $dir );
 foreach ( $files as $file ) {
     if ( !in_array( $file, $allowedFiles ) ) unlink( $dir . $file );
@@ -149,7 +148,7 @@ echo "Final processing...\n";
 
 /*
  *
- * МАССИВ ТЕКСТОВЫХ ЗНАЧЕНИЙ ЭЛЕМЕНТОВ ВАЙТА
+ * Website Text Elements Translation
  *
  * */
 $lang = [
@@ -173,7 +172,7 @@ file_put_contents( "$dir/lang.json", json_encode( $lang ) );
 
 /*
  *
- * ЗАПИСЬ КОНФИГУРАЦИОННОГО ФАЙЛА
+ * Configuration file processing
  *
  * */
 $themes = [ 'Cerulean', 'Cosmo', 'Cyborg', 'Darkly', 'Flatly', 'Journal', 'Litera', 'Lumen', 'Lux', 'Materia', 'Minty', 'Pulse', 'Sandstone', 'Simplex', 'Slate', 'Solar', 'Spacelab', 'Superhero', 'United', 'Yeti' ];
